@@ -1,0 +1,13 @@
+{
+  "name": "xoxo-edge-worker",
+  "private": true,
+  "description": "XOXO edge classification API — deployed to edge.xoxo.ai via Cloudflare Workers",
+  "scripts": {
+    "dev":    "wrangler dev --local",
+    "deploy": "wrangler deploy",
+    "tail":   "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}

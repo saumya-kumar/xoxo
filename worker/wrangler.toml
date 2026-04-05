@@ -1,0 +1,35 @@
+name            = "xoxo-edge"
+main            = "src/index.js"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# KV namespaces
+[[kv_namespaces]]
+binding = "CACHE"          # bot-response edge cache
+id      = "REPLACE_WITH_PRODUCTION_KV_ID"
+preview_id = "REPLACE_WITH_PREVIEW_KV_ID"
+
+[[kv_namespaces]]
+binding = "PUBLISHER_CONFIG"   # per-publisher policy & API keys
+id      = "REPLACE_WITH_PRODUCTION_KV_ID_2"
+preview_id = "REPLACE_WITH_PREVIEW_KV_ID_2"
+
+# R2 bucket for large cached payloads (full HTML > 25kB)
+[[r2_buckets]]
+binding    = "CACHE_STORE"
+bucket_name = "xoxo-cache"
+
+# Analytics Engine for savings events
+[[analytics_engine_datasets]]
+binding = "ANALYTICS"
+dataset = "xoxo_events"
+
+# Environment variables (set secrets via: wrangler secret put VAR_NAME)
+[vars]
+ENVIRONMENT = "production"
+CACHE_TTL_DEFAULT = "3600"   # 1 hour
+
+# Routes — Cloudflare will handle edge.xoxo.ai/*
+[[routes]]
+pattern = "edge.xoxo.ai/*"
+zone_name = "xoxo.ai"

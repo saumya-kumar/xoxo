@@ -1,0 +1,361 @@
+XOXO.
+Startup Strategy Document
+Intelligent compute savings for publishers in the agentic web
+51%
+of web traffic is now bots
+40%
+bandwidth eaten free
+2027
+bots surpass human traffic
+Prepared: April 2026  ·  Confidential
+
+1. The Problem — Why This Exists
+This startup idea emerged from a keynote by Matthew Prince, CEO of Cloudflare, at South by Southwest 2026. Prince handles 20% of all web traffic and provided a clear, data-backed picture of a massive and growing problem.
+
+1.1 What Matthew Prince Said (The Evidence)
+"By 2027, the amount of bot traffic online will exceed the amount of human traffic." — Matthew Prince, Cloudflare CEO, SXSW 2026
+
+•Bot traffic is no longer minor. The internet has historically been ~20% bot traffic. That ratio is now inverting.
+•AI agents visit 1,000x more pages than humans. If a human shops for a camera on 5 websites, an AI agent will visit 5,000.
+•The old internet business model is broken. Bots don't click ads. Bots don't subscribe. The model of "create content, drive traffic, sell ads/subscriptions" completely fails in an AI world.
+•Even the world's best retailers don't know the answer. Walmart lets all bots in freely. Amazon is suing companies to keep bots out. Target only allows their own bots. Three radically different strategies — no consensus.
+•AI companies want unique local content and will pay for it. The Park Record (a small local newspaper in Utah owned by Prince and his wife) may earn more from AI content licensing in 2026 than from digital advertising.
+
+1.2 The Core Technical Problem
+When an AI agent visits a publisher's website, it hits the origin server directly — bypassing CDN caches because agents need "fresh" content. A training scraper like GPTBot will crawl an entire site in a single session, generating:
+•Massive origin server CPU usage
+•Enormous bandwidth consumption — 40% of a publisher's bandwidth can be eaten by training crawlers alone
+•Zero revenue — bots don't click ads, buy products, or subscribe
+•13% of bots now bypass robots.txt entirely, mimicking human browser sessions
+
+The problem is simple: publishers are subsidising the training of global AI models with their own infrastructure budgets. Every bot visit costs real money and generates nothing in return.
+
+2. XOXO — The Solution
+2.1 What XOXO Does
+XOXO is an intelligent compute savings layer for publishers. It sits between AI bots and a publisher's origin server, intercepting bot traffic at the edge, serving cached responses, and ensuring the publisher's servers only handle traffic that's worth handling.
+
+One line: XOXO is the product that cuts your server bill by 30–60% as AI bot traffic grows — automatically, silently, without touching your codebase.
+
+2.2 Business Model — The Pivot That Matters
+The initial concept considered charging AI companies per-token for content access (like TollBit). After analysis, XOXO pivoted to a cleaner, more defensible model:
+
+Old model (v1)
+Charge AI companies for access — revenue from AI bots paying per token
+Problem with v1
+AI companies can ignore the paywall. Compliance is unenforceable. TollBit already does this. Cloudflare is building it natively.
+New model (v2)
+Charge publishers a SaaS fee for compute savings. Revenue = money saved on servers, CDN, and origin costs.
+Why v2 wins
+Entirely within XOXO's control. No AI company cooperation needed. Measurable, predictable, self-reinforcing ROI.
+
+2.3 Revenue Model
+•Pure SaaS subscription from publishers
+•Pricing based on monthly traffic volume
+•Three tiers: Starter ($99/mo up to 5M visits), Publisher ($499/mo up to 50M visits), Enterprise (custom)
+•ROI framing: "Pay a fraction of what you save" — a publisher saving $8,000/month pays $499 for the product, a 16× ROI
+•Churn protection: cancelling XOXO causes server bills to spike immediately — the savings are tangible and visible
+
+3. How XOXO Works — The Technical Architecture
+3.1 The Two-Phase Cache Model
+XOXO does NOT require installation on the publisher's server. It works at the edge — between the internet and the publisher's origin. 
+
+Phase 1: Cold Cache (First bot visit to a URL)
+When a bot first visits any URL on a publisher's site:
+1.XOXO Worker intercepts the request
+2.Classifies it as a bot (training scraper, retrieval agent, search crawler, or disguised bot)
+3.Passes the request through to origin (necessary — no cached copy exists yet)
+4.Stores the response in XOXO's edge cache, keyed to that URL
+5.Serves the response to the bot
+Phase 2: Warm Cache (Every subsequent bot request)
+For every subsequent bot visit to the same URL:
+6.XOXO Worker intercepts the request
+7.Classifies it as a bot
+8.Finds cached response in XOXO's edge cache
+9.Serves cached response — origin server never touched. No CPU. No bandwidth. No cost.
+This is where the savings come from. Training scrapers visit the same pages thousands of times. Every visit after the first costs nothing because it is served from XOXO's edge cache, not the publisher's server.
+
+3.2 What XOXO Caches and Serves
+•Full page HTML — for training scrapers that need raw content
+•Structured lightweight JSON — key content, title, metadata only. 10x smaller than full HTML. What retrieval agents actually need.
+•llms.txt — auto-generated machine-readable site guide. Agents can get all the structural information they need from this single file, without crawling 5,000 pages.
+
+3.3 Cache Freshness
+Cache TTL (time-to-live) is configurable — typically 1–24 hours for article content. Publishers can also fire a webhook to purge specific URLs instantly when content is updated. This is the same pattern publishers already use for their CDN caches — XOXO is not introducing a new concept.
+
+3.4 Where the Cache Lives
+XOXO's edge cache is NOT on the publisher's server. It runs on XOXO's own globally distributed edge network, built on top of Cloudflare's infrastructure. When a bot hits a publisher's site from San Francisco, the XOXO Worker intercepts it at the nearest Cloudflare PoP (San Francisco), checks XOXO's edge cache, and returns the response — the publisher's Mumbai origin server never wakes up.
+
+4. How Publishers Connect — Client Integration
+4.1 Method 1: Cloudflare Worker (Recommended — 5 Minutes)
+For publishers already behind Cloudflare (most serious publishers are):
+•Go to Cloudflare Dashboard → Workers & Pages → Create
+•Paste the XOXO Worker script (50 lines of JavaScript, provided on signup)
+•Add a route: yourdomain.com/*
+•Done — no code changes to the actual website
+
+The Worker intercepts every request, calls XOXO's edge classify API, and based on the response either:
+–Serves a cached response (bot, cached URL)
+–Returns a 403 block (blocked bot)
+–Passes through to origin (human or allowed bot)
+
+4.2 Method 2: Reverse Proxy / Snippet (Any CDN — 15 Minutes)
+For publishers on Fastly, Vercel, AWS CloudFront, or nginx — a config block that fires a subrequest to XOXO before passing traffic to origin. No website code changes required.
+
+4.3 Key Integration Insight
+XOXO sits entirely outside the publisher's stack. Their website code is untouched. Zero deployment risk. Reversible in 30 seconds. This is a critical selling point — there is no engineering risk in trying XOXO.
+
+5. Competitive Landscape
+5.1 Key Competitors
+TollBit
+Closest competitor. $24M Series A. 3,000+ publishers. Focus: charging AI companies per-page. Does NOT do compute savings or routing. Dependent on AI company compliance.
+Cloudflare Pay-Per-Crawl
+Launched mid-2025. A feature, not a focused product. Cloudflare is infra — they have no incentive to build the monetisation/savings layer deeply.
+ScalePost
+NOT a competitor. Analytics tool — tells you how your brand appears in AI answers. Completely different problem. Potential partner.
+ProRata.ai
+$25M raised. AI search using licensed content. Different model — they are a search product, not a publisher savings layer.
+
+5.2 Why XOXO is Different
+•TollBit charges AI companies (requires their cooperation). XOXO charges publishers (requires no one's cooperation).
+•TollBit does not reduce compute costs. XOXO's primary value prop is cost reduction.
+•Cloudflare's pay-per-crawl is a feature. XOXO is a focused product with a dashboard, policy controls, and per-publisher savings reporting.
+•No one has cleanly won mid-market e-commerce or SaaS documentation sites — XOXO's beachhead segments.
+
+5.3 The ScalePost Distinction (Important)
+ScalePost tracks how brands appear in AI search results — visibility, citations, mentions. It is a marketing analytics tool. XOXO is an infrastructure cost-savings tool. They solve completely different problems and are natural partners rather than competitors.
+
+6. Target Customers — Who to Sell To First
+6.1 Wave 1: Independent Media & Publishers (Start Here)
+Why first: Highest immediate pain, fastest decision-making, clearest ROI story, and their content is exactly what AI companies want.
+•Local news organisations (like the Park Record example from Matthew Prince)
+•Niche newsletters and blogs with 100k+ monthly visits
+•Vertical media — legal, medical, finance, real estate publications
+
+The sales conversation: "Your unique local content is what AI companies want. Right now they're taking it for free and it's eating 40% of your hosting budget. XOXO stops that."
+
+6.2 Wave 1: Mid-Market E-Commerce
+Why first: Pure cost-reduction sale. No behaviour change required. Just show a lower bill.
+•DTC brands with 500k–5M monthly visits
+•Vertical marketplaces
+•Subscription commerce
+
+The sales conversation: "Agent traffic spikes destroy your P99 latency on product pages. XOXO routes agents to cache, humans get full pages. Your origin costs drop 40% in week one."
+
+6.3 Wave 2: SaaS & Developer Platforms (12 months out)
+•Developer tools and API platforms
+•Documentation-heavy SaaS products
+•Enterprise software
+
+6.4 Wave 3: Enterprise (18+ months)
+•Large retailers navigating the Walmart/Amazon/Target bot policy dilemma
+•Financial services with premium data
+•Healthcare and legal publishing
+
+Sequencing logic: Publishers give you case studies. E-commerce gives you revenue. Both give you credibility to sell enterprise. Never start with enterprise — their 18-month sales cycle will kill you before you get to product-market fit.
+
+7. Build Assessment — How Fast Can This Be Built?
+7.1 Component-by-Component
+Component
+Difficulty
+Notes
+Cloudflare Worker (interception)
+Easy
+50 lines of JS. A weekend. Not a moat — just the pipe.
+Bot classification
+Medium — weeks
+Rules are known. Accuracy compounds with data over time.
+Edge cache layer
+Medium — months
+Cloudflare KV/R2. Main complexity is cache invalidation at scale.
+llms.txt generation
+Easy
+Open spec. Weekend project. Not a moat.
+Savings dashboard
+Easy
+Standard analytics UI. The value is the number, not the chart.
+Bot fingerprint dataset
+Hard — compounding
+Real moat. More publishers = more signal = better accuracy.
+Scale & reliability
+Hard — 12-18 months
+Must build on Cloudflare Workers. Cannot DIY global edge.
+
+7.2 Realistic Timelines
+•6–8 weeks: MVP — one publisher, basic routing, savings dashboard, Cloudflare Worker integration
+•4–6 months: Production-ready with billing, policy controls, multi-publisher support
+•12–18 months: Scale and reliability matching TollBit
+
+The tech is not the hard part. A strong 2-person engineering team can have an MVP live in 6–8 weeks. The hard parts are (1) building the bot fingerprint dataset and (2) getting enough publishers to create network effects.
+
+7.3 Recommended Tech Stack
+•Edge runtime: Cloudflare Workers (mandatory — can't build global edge from scratch)
+•Cache storage: Cloudflare KV (fast) + R2 (cheaper for large payloads)
+•Classification API: Node.js on Cloudflare Workers, PostgreSQL for publisher config
+•Dashboard: React + Next.js, Tinybird or ClickHouse for real-time event analytics
+•Billing: Stripe with usage-based pricing tiers
+•Auth: Clerk or Auth0
+
+8. Risk Analysis
+8.1 Existential Risks
+Risk
+Level
+Why it matters
+Mitigation
+Cloudflare builds this natively
+Critical
+They already launched pay-per-crawl. They have every publisher relationship and CDN integration.
+Own the monetisation marketplace layer — Cloudflare is infra, they won't manage content licensing contracts or revenue splits.
+AI companies ignore everything
+Critical
+13% of bots already bypass robots.txt. If OpenAI decides not to cooperate, paywalls fail. (Less relevant for XOXO v2 since we don't charge AI companies.)
+XOXO v2 doesn't require AI company cooperation at all. The compute savings work regardless of AI company behaviour.
+TollBit out-executes
+Critical
+$24M raised, 3,000+ publishers, 18-month head start. If they pivot to compute savings, the window closes.
+Go deep on e-commerce and SaaS first — segments TollBit ignores. Differentiate on the unified cost-savings platform story.
+
+8.2 High Risks
+Risk
+Level
+Why it matters
+Mitigation
+Industry consolidates on one standard
+High
+If OpenAI, Anthropic, Google agree on an open protocol for AI content access, a middleware layer loses value.
+Participate in standards bodies early. Position XOXO as the implementation layer — like Stripe implements card network standards but still adds enormous value.
+Publishers choose citation over revenue
+High
+Publishers may decide being cited by ChatGPT is worth more than blocking bots — and opt out of cost savings.
+Lead with cost reduction, not monetisation. A publisher saving $400/month on hosting before a licensing dollar arrives is already a happy customer.
+Regulatory uncertainty
+High
+EU AI Act, US copyright cases could help (forcing AI companies to pay) or hurt (compliance burden slows adoption).
+Build compliance tooling into the product — audit logs, consent management. Be the tool that helps publishers stay compliant regardless of which way law goes.
+
+8.3 How Copyable Is the Tech?
+The tech itself is not hard to copy. Any competent team can build the core product in 3–4 months. The real moats are:
+•Data flywheel: More publishers → more bot traffic signals → better classification accuracy → happier publishers → more publishers. A competitor needs to break into this loop from zero.
+•Savings lock-in: Every month a publisher stays, their server bill goes down. Switching away means bills spike immediately. The longer they stay, the more painful leaving becomes.
+•Speed of market: Bot traffic doubles every 12–18 months. Every month delayed is a month a competitor can sign 50 publishers. Move fast while the window is open.
+•Integration depth: After 6 months, publisher ops runbooks, cost projections, and Cloudflare configs all assume XOXO exists. Ripping it out has organisational friction.
+The tech is the entry ticket. The business — publisher relationships, fingerprint dataset, and integration depth — is the moat. This is exactly why moving fast in year one matters more than building perfect tech.
+
+9. Product — User Journey & Dashboard Design
+9.1 The Complete User Journey
+The full journey from discovery to active savings has been designed and prototyped:
+
+10.Sign up — Email/password or Google/GitHub SSO
+11.Choose plan — Starter (free), Publisher ($499/mo), Enterprise (custom)
+12.Add domain — Single input, auto-detects Cloudflare, surfaces right connection method
+13.Install Worker — Paste 50 lines of JS into Cloudflare Dashboard, add route
+14.Verify — 6-point checklist confirms everything is working
+15.First savings moment — Big green number, dark screen, emotional payoff. This is the screen that sells.
+16.Dashboard — Live, full-featured dashboard with savings compounding daily
+
+The first savings moment is the most important screen in the product. When a publisher sees "$0.12 saved in the last 60 seconds — 847 bots intercepted, 0 origin hits" — that is the moment they become a long-term customer. Design this screen with more care than any other.
+
+9.2 Dashboard Pages
+•Overview — Headline metrics (savings, origin calls blocked, bot share, bandwidth saved), daily savings chart, traffic donut, top bots table
+•Traffic — Human vs bot trend, requests by category, peak traffic hours
+•Savings — Hero savings number, breakdown by compute/bandwidth/CDN, cumulative savings chart, projected annual savings
+•Bot Intelligence — All identified bots, classification accuracy, disguised bot alerts, compliance status
+•Policy — Global toggles, default rules by category (training/retrieval/search/unknown), per-bot overrides. Changes take effect in 30 seconds. No deploys.
+•Settings — Domain config, cache TTL, plan & billing with usage meter, integrations (Cloudflare, Google Analytics, Slack, Webhook), API key
+
+9.3 The Savings Dashboard — The Core Retention Mechanic
+The savings dashboard is not just a nice-to-have. It is XOXO's primary retention mechanism. Every month the publisher sees:
+•Exactly how much XOXO saved them this month (broken down by compute, bandwidth, CDN)
+•What they paid for XOXO this month
+•Their ROI (typically 10–30x in month one, growing as cache warms)
+•Projected annual savings at current growth rate
+
+Cancelling XOXO means this savings number immediately returns to zero and their server bill spikes. The dashboard makes that consequence viscerally clear every month.
+
+10. Site Architecture — Where Everything Lives
+xoxo.ai
+Public landing page (built with Geist Mono font, green/white/black theme)
+xoxo.ai/pricing
+Pricing page
+xoxo.ai/docs
+Integration documentation
+xoxo.ai/blog
+Content / SEO
+xoxo.ai/login
+Auth page
+xoxo.ai/signup
+Onboarding flow → domain → Worker install → verify
+app.xoxo.ai
+The full dashboard (separate Vercel/Railway deployment)
+edge.xoxo.ai
+XOXO's edge classification API (Cloudflare Workers)
+
+11. Key Insights from the Conversation
+11.1 Matthew Prince's Talk — Direct Validation
+Every major claim in XOXO's pitch was validated directly by Cloudflare's CEO at SXSW 2026:
+•"Bots will exceed human traffic by 2027" — Market timing confirmed
+•"A bot visits 5,000 pages where a human visits 5" — Core pain point confirmed
+•"Walmart, Amazon, Target all have different strategies — nobody knows the answer" — Policy dashboard need confirmed
+•"AI companies want unique local content and will pay for it" — Monetisation opportunity confirmed
+•"Cloudflare launched pay-per-crawl" — But as a feature, not a product. The gap is real.
+
+11.2 The ScalePost Distinction
+ScalePost (scalepost.ai) was reviewed and is NOT a competitor. ScalePost is a brand analytics tool — it tells companies how they appear in AI search results. XOXO is an infrastructure cost-savings tool. These are complementary products targeting different buyers (marketing teams vs engineering/finance teams).
+
+11.3 The Compute Savings Model is Smarter Than the Toll Model
+The pivot from "charge AI companies" to "save publishers compute" is the most important strategic decision in this document. Reasons:
+•No dependency on AI company cooperation
+•Value is immediate and measurable from day one
+•ROI is provable every month — reduces churn to near zero
+•Not competing with TollBit on their core thesis
+•Works even if AI companies get better at evading paywalls
+•Scales naturally as bot traffic grows — savings compound automatically
+
+11.4 The Right Analogy
+XOXO is not Stripe (which needs AI company cooperation as the buyer). XOXO is more like AWS Cost Explorer + a CDN optimizer — it saves the publisher money on infrastructure they're already paying for, using infrastructure that already exists (Cloudflare).
+
+12. Recommended Next Steps
+12.1 Immediate (0–4 Weeks)
+•Register xoxo.ai domain
+•Set up Cloudflare account for edge infrastructure
+•Build the classification API on Cloudflare Workers (v1 — rule-based, not ML)
+•Build the edge cache layer using Cloudflare KV
+•Deploy the landing page (already designed)
+•Sign 5 pilot publishers — local news orgs are the easiest first call
+
+12.2 Month 1–3 (MVP to First Revenue)
+•Launch with 5 pilot publishers — validate savings numbers are real
+•Build the savings dashboard — this is the core product, not an afterthought
+•Add Stripe billing — convert pilots to paying customers
+•Get first 10 paying customers in the $99–$499/mo range
+•Document case studies: "TechCrunch saved $X in month one"
+
+12.3 Month 3–6 (Growth)
+•Use publisher case studies to open e-commerce conversations
+•Add policy controls dashboard — per-bot allow/block/cache rules
+•Build the bot fingerprint dataset from real traffic
+•Raise seed round if needed — the savings numbers are the pitch
+
+12.4 The Single Most Important Metric
+Track one number above all others: average monthly savings per publisher. If this number is growing as bot traffic grows, everything else follows. Pricing, retention, fundraising, and word-of-mouth all flow from this single metric.
+
+Appendix — Product Assets Built
+The following production-ready assets were designed and built during this session:
+
+Landing page
+xoxo-landing.html — White background, Geist Mono font, green accents. Sections: hero, stat bar, how it works (4 steps), savings calculator (interactive sliders), pricing, CTA.
+Dashboard UI
+xoxo-dashboard.html — Full dashboard with sidebar navigation. All 6 pages: Overview, Traffic, Savings, Bot Intelligence, Policy, Settings. Interactive policy controls.
+User journey
+xoxo-journey.html — Complete navigable flow from Sign Up → Plan Picker → Add Domain → Install Worker → Verify → First Savings → Dashboard. All screens interactive.
+This document
+xoxo-strategy.docx — Full strategy document covering problem, solution, architecture, competition, customers, build plan, risks, and next steps.
+
+Design System
+•Font: Geist Mono (monospace — signals technical, precise, trustworthy)
+•Primary colour: #0DB84A (green — savings, growth, money)
+•Text: #0C0C0C (near black — clean, minimal)
+•Background: #FAFAF8 (warm white — not clinical)
+•Surface: #F4F4F0 (warm light grey — cards and panels)
+•Accent surfaces: Cloudflare-inspired dark sidebar (#0C0C0C) with green highlights
+
+XOXO — Confidential Strategy Document — April 2026

@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XOXO — User Journey</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #0c0c0c;
+  --ink-60: rgba(12,12,12,0.6);
+  --ink-30: rgba(12,12,12,0.3);
+  --ink-12: rgba(12,12,12,0.12);
+  --ink-06: rgba(12,12,12,0.06);
+  --ink-03: rgba(12,12,12,0.03);
+  --white: #fafaf8;
+  --surface: #f4f4f0;
+  --green: #0db84a;
+  --green-lt: #e8f9ef;
+  --green-dk: #076b27;
+  --green-bd: rgba(13,184,74,0.25);
+  --red: #e84040;
+  --red-lt: #fef0f0;
+  --amber: #f59e0b;
+  --amber-lt: #fffbeb;
+  --blue: #2563eb;
+  --blue-lt: #eff6ff;
+  --sidebar-w: 216px;
+}
+
+body { font-family: 'Geist Mono', monospace; background: var(--surface); color: var(--ink); font-size: 13px; line-height: 1.5; overflow: hidden; height: 100vh; }
+
+/* ── JOURNEY NAV BAR ── */
+.journey-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  background: var(--ink); padding: 0 24px;
+  display: flex; align-items: center; gap: 0;
+  height: 42px; border-bottom: 1px solid rgba(255,255,255,0.08);
+  overflow-x: auto; scrollbar-width: none;
+}
+.journey-bar::-webkit-scrollbar { display: none; }
+.jb-logo { font-size: 13px; font-weight: 600; color: #fff; margin-right: 20px; flex-shrink: 0; letter-spacing: -0.02em; }
+.jb-logo em { color: var(--green); font-style: normal; }
+.jb-steps { display: flex; align-items: center; gap: 0; flex: 1; }
+.jb-step {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 14px; height: 42px; cursor: pointer;
+  font-size: 11px; color: rgba(255,255,255,0.35);
+  letter-spacing: 0.02em; transition: color 0.2s; white-space: nowrap;
+  border-right: 1px solid rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.jb-step:hover { color: rgba(255,255,255,0.7); }
+.jb-step.active { color: #fff; background: rgba(255,255,255,0.07); }
+.jb-step.done { color: var(--green); }
+.jb-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.jb-arrow { margin-left: auto; font-size: 11px; color: rgba(255,255,255,0.25); padding-left: 16px; flex-shrink: 0; cursor: pointer; transition: color 0.2s; }
+.jb-arrow:hover { color: var(--green); }
+
+/* ── SCREEN WRAPPER ── */
+.screen { display: none; position: fixed; top: 42px; left: 0; right: 0; bottom: 0; overflow-y: auto; }
+.screen.active { display: block; }
+
+/* ── AUTH SCREENS ── */
+.auth-wrap {
+  min-height: 100%; display: flex; align-items: center; justify-content: center;
+  background: var(--white); padding: 40px 20px;
+}
+.auth-card {
+  width: 100%; max-width: 400px;
+  background: var(--white);
+}
+.auth-logo { font-size: 20px; font-weight: 600; color: var(--ink); margin-bottom: 32px; letter-spacing: -0.02em; }
+.auth-logo em { color: var(--green); font-style: normal; }
+.auth-title { font-size: 22px; font-weight: 500; color: var(--ink); margin-bottom: 6px; letter-spacing: -0.02em; }
+.auth-sub { font-size: 13px; color: var(--ink-60); margin-bottom: 32px; line-height: 1.6; }
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 11px; color: var(--ink-60); letter-spacing: 0.04em; margin-bottom: 6px; text-transform: uppercase; }
+.field input {
+  width: 100%; font-family: 'Geist Mono', monospace; font-size: 13px;
+  padding: 11px 14px; border: 1px solid var(--ink-12); border-radius: 4px;
+  background: var(--white); color: var(--ink); outline: none; transition: border-color 0.2s;
+}
+.field input:focus { border-color: var(--green); }
+.field input::placeholder { color: var(--ink-30); }
+.btn-full {
+  width: 100%; font-family: 'Geist Mono', monospace; font-size: 13px; font-weight: 500;
+  padding: 12px; border: none; border-radius: 4px; cursor: pointer;
+  background: var(--ink); color: var(--white); letter-spacing: 0.02em;
+  transition: background 0.2s; margin-top: 8px;
+}
+.btn-full:hover { background: var(--green); }
+.btn-full.outline {
+  background: transparent; color: var(--ink); border: 1px solid var(--ink-12);
+  margin-top: 10px;
+}
+.btn-full.outline:hover { border-color: var(--ink-30); background: var(--ink-03); }
+.auth-divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; }
+.auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--ink-12); }
+.auth-divider span { font-size: 11px; color: var(--ink-30); }
+.auth-footer { margin-top: 24px; font-size: 12px; color: var(--ink-30); text-align: center; }
+.auth-footer a { color: var(--green); text-decoration: none; }
+.social-btn {
+  width: 100%; font-family: 'Geist Mono', monospace; font-size: 12px;
+  padding: 11px; border: 1px solid var(--ink-12); border-radius: 4px;
+  background: var(--white); color: var(--ink-60); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: border-color 0.2s; margin-bottom: 8px;
+}
+.social-btn:hover { border-color: var(--ink-30); }
+
+/* ── PLAN PICKER ── */
+.plan-wrap {
+  min-height: 100%; background: var(--white); padding: 60px 40px;
+  display: flex; flex-direction: column; align-items: center;
+}
+.plan-title { font-size: 26px; font-weight: 500; color: var(--ink); margin-bottom: 6px; text-align: center; letter-spacing: -0.02em; }
+.plan-sub { font-size: 13px; color: var(--ink-60); margin-bottom: 48px; text-align: center; }
+.plans-row { display: grid; grid-template-columns: repeat(3, 300px); gap: 2px; background: var(--ink-06); border: 1px solid var(--ink-06); }
+.plan-opt { background: var(--white); padding: 32px; cursor: pointer; transition: background 0.15s; border: 2px solid transparent; position: relative; }
+.plan-opt:hover { background: var(--surface); }
+.plan-opt.selected { border-color: var(--green); background: var(--green-lt); }
+.plan-tag { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-30); margin-bottom: 16px; }
+.plan-opt.selected .plan-tag { color: var(--green-dk); }
+.plan-name { font-size: 18px; font-weight: 500; color: var(--ink); margin-bottom: 4px; }
+.plan-price { font-size: 36px; font-weight: 500; color: var(--ink); letter-spacing: -0.04em; line-height: 1; margin: 12px 0 4px; }
+.plan-opt.selected .plan-price { color: var(--green); }
+.plan-period { font-size: 11px; color: var(--ink-30); margin-bottom: 20px; }
+.plan-feats { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.plan-feats li { font-size: 12px; color: var(--ink-60); display: flex; gap: 8px; }
+.plan-feats li::before { content: '—'; color: var(--green); }
+.plan-cta { margin-top: 36px; text-align: center; }
+
+/* ── ONBOARDING ── */
+.onboard-wrap {
+  min-height: 100%; display: flex;
+  background: var(--white);
+}
+.onboard-sidebar {
+  width: 300px; background: var(--ink); padding: 40px 32px;
+  display: flex; flex-direction: column; flex-shrink: 0;
+}
+.ob-logo { font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 40px; }
+.ob-logo em { color: var(--green); font-style: normal; }
+.ob-steps { display: flex; flex-direction: column; gap: 0; }
+.ob-step { display: flex; align-items: flex-start; gap: 14px; padding: 16px 0; position: relative; }
+.ob-step:not(:last-child)::after { content: ''; position: absolute; left: 11px; top: 40px; bottom: -8px; width: 1px; background: rgba(255,255,255,0.08); }
+.ob-circle { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; margin-top: 2px; }
+.ob-circle.done { background: var(--green); color: var(--ink); }
+.ob-circle.active { background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+.ob-circle.todo { background: transparent; color: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.1); }
+.ob-step-title { font-size: 13px; font-weight: 500; color: #fff; margin-bottom: 2px; }
+.ob-step.todo .ob-step-title { color: rgba(255,255,255,0.3); }
+.ob-step-sub { font-size: 11px; color: rgba(255,255,255,0.3); }
+.ob-step.active .ob-step-sub { color: rgba(255,255,255,0.5); }
+.ob-main { flex: 1; padding: 40px 48px; overflow-y: auto; }
+.ob-step-num { font-size: 11px; letter-spacing: 0.08em; color: var(--green); text-transform: uppercase; margin-bottom: 8px; }
+.ob-title { font-size: 24px; font-weight: 500; color: var(--ink); margin-bottom: 8px; letter-spacing: -0.02em; }
+.ob-desc { font-size: 13px; color: var(--ink-60); line-height: 1.7; margin-bottom: 32px; max-width: 480px; }
+.code-box {
+  background: var(--ink); border-radius: 6px; padding: 20px 22px;
+  font-size: 12px; line-height: 1.85; color: rgba(255,255,255,0.5);
+  position: relative; margin-bottom: 20px; font-family: 'Geist Mono', monospace;
+}
+.code-box .kw { color: var(--green); }
+.code-box .str { color: #a8e6b8; }
+.code-box .cm { color: rgba(255,255,255,0.2); font-style: italic; }
+.copy-tag {
+  position: absolute; top: 10px; right: 12px;
+  font-size: 10px; padding: 3px 8px; border-radius: 3px;
+  background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.4);
+  cursor: pointer; letter-spacing: 0.04em;
+}
+.copy-tag:hover { background: rgba(255,255,255,0.14); color: #fff; }
+.check-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+.check-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--surface); border-radius: 4px; }
+.check-icon { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+.check-icon.ok { background: var(--green-lt); color: var(--green-dk); }
+.check-icon.pending { background: var(--amber-lt); color: var(--amber); }
+.check-icon.wait { background: var(--ink-06); color: var(--ink-30); }
+.check-label { font-size: 13px; color: var(--ink); flex: 1; }
+.check-sub { font-size: 11px; color: var(--ink-30); }
+.ob-btn {
+  font-family: 'Geist Mono', monospace; font-size: 12px; font-weight: 500;
+  padding: 11px 28px; border-radius: 4px; cursor: pointer; letter-spacing: 0.02em;
+  transition: all 0.15s; border: none;
+}
+.ob-btn.primary { background: var(--ink); color: var(--white); }
+.ob-btn.primary:hover { background: var(--green); }
+.ob-btn.secondary { background: transparent; color: var(--ink-60); border: 1px solid var(--ink-12); margin-left: 10px; }
+.ob-btn.secondary:hover { color: var(--ink); border-color: var(--ink-30); }
+.domain-row { display: flex; gap: 10px; margin-bottom: 20px; max-width: 440px; }
+.domain-row input {
+  flex: 1; font-family: 'Geist Mono', monospace; font-size: 13px;
+  padding: 11px 14px; border: 1px solid var(--ink-12); border-radius: 4px;
+  background: var(--white); color: var(--ink); outline: none;
+}
+.domain-row input:focus { border-color: var(--green); }
+.domain-row button {
+  font-family: 'Geist Mono', monospace; font-size: 12px; padding: 11px 20px;
+  background: var(--ink); color: var(--white); border: none; border-radius: 4px; cursor: pointer;
+  white-space: nowrap; transition: background 0.15s;
+}
+.domain-row button:hover { background: var(--green); }
+.alert-box { display: flex; gap: 10px; padding: 12px 16px; border-radius: 4px; font-size: 12px; margin-bottom: 20px; }
+.alert-box.green { background: var(--green-lt); color: var(--green-dk); border: 1px solid rgba(13,184,74,0.2); }
+.alert-box.amber { background: var(--amber-lt); color: #92400e; border: 1px solid rgba(245,158,11,0.2); }
+
+/* ── FIRST SAVINGS SCREEN ── */
+.first-save {
+  min-height: 100%; display: flex; align-items: center; justify-content: center;
+  background: var(--ink); flex-direction: column; padding: 60px 40px; text-align: center;
+}
+.confetti-num { font-size: 72px; font-weight: 500; color: var(--green); letter-spacing: -0.05em; line-height: 1; margin-bottom: 8px; }
+.confetti-label { font-size: 14px; color: rgba(255,255,255,0.4); margin-bottom: 32px; letter-spacing: 0.06em; text-transform: uppercase; }
+.first-save h2 { font-size: 28px; font-weight: 500; color: #fff; margin-bottom: 12px; letter-spacing: -0.02em; }
+.first-save p { font-size: 14px; color: rgba(255,255,255,0.4); max-width: 440px; line-height: 1.7; margin-bottom: 40px; }
+.first-stats { display: flex; gap: 32px; margin-bottom: 48px; }
+.first-stat { text-align: center; }
+.first-stat-num { font-size: 28px; font-weight: 500; color: #fff; letter-spacing: -0.03em; }
+.first-stat-label { font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 4px; }
+.first-btn {
+  font-family: 'Geist Mono', monospace; font-size: 13px; font-weight: 500;
+  padding: 14px 36px; background: var(--green); color: var(--ink);
+  border: none; border-radius: 4px; cursor: pointer; letter-spacing: 0.02em;
+  transition: background 0.2s;
+}
+.first-btn:hover { background: #0aa840; }
+
+/* ── DASHBOARD ── */
+.dash-wrap { display: flex; height: 100%; }
+.dash-sidebar {
+  width: var(--sidebar-w); background: var(--ink); display: flex; flex-direction: column; flex-shrink: 0;
+  overflow-y: auto;
+}
+.ds-logo { padding: 18px 18px 0; font-size: 15px; font-weight: 600; color: #fff; letter-spacing: -0.02em; }
+.ds-logo em { color: var(--green); font-style: normal; }
+.ds-site {
+  margin: 14px 10px 18px; padding: 9px 12px;
+  background: rgba(255,255,255,0.06); border-radius: 6px;
+  display: flex; align-items: center; gap: 8px; cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.ds-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+.ds-name { font-size: 12px; color: rgba(255,255,255,0.65); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ds-sec { padding: 0 10px 5px; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.2); }
+.nav-i {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 10px; margin: 1px 6px; border-radius: 5px;
+  cursor: pointer; color: rgba(255,255,255,0.4); font-size: 12px;
+  transition: background 0.15s;
+}
+.nav-i:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.75); }
+.nav-i.active { background: rgba(255,255,255,0.1); color: #fff; }
+.nav-i.active .ni { color: var(--green); }
+.ni { width: 15px; text-align: center; font-size: 13px; flex-shrink: 0; }
+.nb { margin-left: auto; background: var(--green); color: var(--ink); font-size: 9px; font-weight: 600; padding: 1px 5px; border-radius: 100px; }
+.ds-bot { margin-top: auto; padding: 10px; border-top: 1px solid rgba(255,255,255,0.06); }
+.user-r { display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: 5px; cursor: pointer; }
+.user-r:hover { background: rgba(255,255,255,0.07); }
+.ua { width: 26px; height: 26px; border-radius: 50%; background: var(--green); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: var(--ink); flex-shrink: 0; }
+.un { font-size: 11px; color: rgba(255,255,255,0.55); }
+.up { font-size: 10px; color: rgba(255,255,255,0.2); }
+
+.dash-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+.dash-header {
+  height: 52px; background: var(--white); border-bottom: 1px solid var(--ink-12);
+  display: flex; align-items: center; padding: 0 24px; gap: 12px; flex-shrink: 0;
+}
+.dh-title { font-size: 13px; font-weight: 500; color: var(--ink); flex: 1; }
+.dh-btn {
+  font-family: 'Geist Mono', monospace; font-size: 11px; padding: 5px 12px;
+  border-radius: 3px; cursor: pointer; transition: all 0.15s; letter-spacing: 0.02em;
+  border: 1px solid var(--ink-12); background: transparent; color: var(--ink-60);
+}
+.dh-btn:hover { border-color: var(--ink-30); color: var(--ink); }
+.dh-btn.p { background: var(--ink); color: #fff; border-color: var(--ink); }
+.dh-btn.p:hover { background: var(--green); border-color: var(--green); }
+.dr { font-size: 11px; color: var(--ink-30); padding: 5px 10px; border: 1px solid var(--ink-12); border-radius: 3px; cursor: pointer; }
+.dash-content { flex: 1; overflow-y: auto; padding: 20px 24px; }
+.dash-page { display: none; }
+.dash-page.active { display: block; }
+
+.mets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+.met { background: var(--white); border: 1px solid var(--ink-12); border-radius: 6px; padding: 16px 18px; position: relative; overflow: hidden; }
+.met-acc { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; }
+.met-acc.g { background: var(--green); }
+.met-acc.b { background: var(--blue); }
+.met-acc.a { background: var(--amber); }
+.met-acc.r { background: var(--red); }
+.met-lbl { font-size: 10px; color: var(--ink-30); letter-spacing: 0.04em; margin-bottom: 8px; }
+.met-val { font-size: 26px; font-weight: 500; letter-spacing: -0.04em; color: var(--ink); line-height: 1; margin-bottom: 6px; }
+.met-val .u { font-size: 13px; font-weight: 400; color: var(--ink-30); }
+.met-ch { font-size: 11px; }
+.up-c { color: var(--green); }
+.dn-c { color: var(--red); }
+.nt-c { color: var(--ink-30); }
+
+.card { background: var(--white); border: 1px solid var(--ink-12); border-radius: 6px; overflow: hidden; }
+.ch { padding: 14px 18px; border-bottom: 1px solid var(--ink-06); display: flex; align-items: center; justify-content: space-between; }
+.ct { font-size: 12px; font-weight: 500; color: var(--ink); }
+.ca { font-size: 11px; color: var(--ink-30); cursor: pointer; }
+.ca:hover { color: var(--green); }
+.cb { padding: 18px; }
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.mb10 { margin-bottom: 10px; }
+.mb16 { margin-bottom: 16px; }
+
+.bars { height: 140px; display: flex; align-items: flex-end; gap: 3px; }
+.bar-w { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; height: 100%; justify-content: flex-end; }
+.bar { width: 100%; border-radius: 2px 2px 0 0; transition: opacity 0.2s; cursor: pointer; }
+.bar:hover { opacity: 0.7; }
+.bar-l { font-size: 9px; color: var(--ink-30); }
+
+.bdg { display: inline-flex; align-items: center; font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 100px; }
+.bdg.g { background: var(--green-lt); color: var(--green-dk); }
+.bdg.r { background: var(--red-lt); color: #9b1212; }
+.bdg.a { background: var(--amber-lt); color: #92400e; }
+.bdg.b { background: var(--blue-lt); color: #1d4ed8; }
+.bdg.gr { background: var(--ink-06); color: var(--ink-60); }
+
+tbl { width: 100%; border-collapse: collapse; }
+table { width: 100%; border-collapse: collapse; }
+th { font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-30); padding: 9px 14px; text-align: left; border-bottom: 1px solid var(--ink-06); font-weight: 500; }
+td { padding: 10px 14px; border-bottom: 1px solid var(--ink-06); font-size: 12px; color: var(--ink); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--ink-03); }
+
+.sav-hero { background: var(--ink); border-radius: 6px; padding: 28px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+.sav-big { font-size: 48px; font-weight: 500; color: var(--green); letter-spacing: -0.05em; line-height: 1; }
+.sav-big-l { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 4px; letter-spacing: 0.06em; text-transform: uppercase; }
+.sav-bdown { display: flex; gap: 28px; }
+.sbd { text-align: right; }
+.sbd-n { font-size: 18px; font-weight: 500; color: #fff; letter-spacing: -0.02em; }
+.sbd-l { font-size: 10px; color: rgba(255,255,255,0.25); margin-top: 3px; }
+
+.pol-row { display: flex; align-items: center; gap: 14px; padding: 12px 18px; border-bottom: 1px solid var(--ink-06); transition: background 0.15s; }
+.pol-row:last-child { border-bottom: none; }
+.pol-row:hover { background: var(--ink-03); }
+.pol-name { font-size: 13px; font-weight: 500; color: var(--ink); }
+.pol-sub { font-size: 11px; color: var(--ink-30); }
+.pol-btns { display: flex; gap: 5px; margin-left: auto; }
+.pb {
+  font-family: 'Geist Mono', monospace; font-size: 10px; padding: 4px 10px;
+  border-radius: 3px; cursor: pointer; border: 1px solid var(--ink-12);
+  background: transparent; color: var(--ink-60); transition: all 0.15s;
+}
+.pb:hover { border-color: var(--ink-30); color: var(--ink); }
+.pb.pa { background: var(--green-lt); border-color: var(--green-bd); color: var(--green-dk); }
+.pb.pr { background: var(--red-lt); border-color: rgba(232,64,64,0.25); color: #9b1212; }
+.pb.pl { background: var(--amber-lt); border-color: rgba(245,158,11,0.25); color: #92400e; }
+
+.tog { position: relative; width: 34px; height: 18px; }
+.tog input { opacity: 0; width: 0; height: 0; }
+.tog-t { position: absolute; inset: 0; background: var(--ink-12); border-radius: 100px; cursor: pointer; transition: background 0.2s; }
+.tog input:checked + .tog-t { background: var(--green); }
+.tog-t::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: transform 0.2s; }
+.tog input:checked + .tog-t::after { transform: translateX(16px); }
+
+.set-row { display: flex; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--ink-06); gap: 14px; }
+.set-row:last-child { border-bottom: none; }
+.set-l { font-size: 13px; font-weight: 500; color: var(--ink); flex: 1; }
+.set-d { font-size: 11px; color: var(--ink-30); margin-top: 2px; }
+.set-inp {
+  font-family: 'Geist Mono', monospace; font-size: 12px; padding: 6px 12px;
+  border: 1px solid var(--ink-12); border-radius: 4px; background: var(--white);
+  color: var(--ink); outline: none; min-width: 200px;
+}
+.set-inp:focus { border-color: var(--green); }
+
+.bot-r { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--ink-06); }
+.bot-r:last-child { border-bottom: none; }
+.bot-ic { width: 30px; height: 30px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+.bot-n { font-size: 13px; font-weight: 500; color: var(--ink); }
+.bot-s { font-size: 11px; color: var(--ink-30); }
+.pb-bar { height: 3px; background: var(--ink-06); border-radius: 100px; margin-top: 5px; overflow: hidden; }
+.pb-fill { height: 100%; border-radius: 100px; }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--ink-12); border-radius: 100px; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.fade-in { animation: fadeIn 0.4s ease forwards; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+.pulse { animation: pulse 1.5s ease-in-out infinite; }
+@keyframes countUp { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+.count-up { animation: countUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+</style>
+</head>
+<body>
+
+<!-- JOURNEY BAR -->
+<div class="journey-bar">
+  <div class="jb-logo">XOXO<em>.</em></div>
+  <div class="jb-steps">
+    <div class="jb-step done" onclick="go(0)"><div class="jb-dot"></div>Sign up</div>
+    <div class="jb-step done" onclick="go(1)"><div class="jb-dot"></div>Choose plan</div>
+    <div class="jb-step done" onclick="go(2)"><div class="jb-dot"></div>Add domain</div>
+    <div class="jb-step done" onclick="go(3)"><div class="jb-dot"></div>Install Worker</div>
+    <div class="jb-step done" onclick="go(4)"><div class="jb-dot"></div>Verify</div>
+    <div class="jb-step active" onclick="go(5)"><div class="jb-dot"></div>First savings</div>
+    <div class="jb-step" onclick="go(6)"><div class="jb-dot"></div>Dashboard</div>
+  </div>
+  <div class="jb-arrow" onclick="next()">Next screen →</div>
+</div>
+
+<!-- SCREEN 0: SIGNUP -->
+<div class="screen active" id="s0">
+  <div class="auth-wrap">
+    <div class="auth-card fade-in">
+      <div class="auth-logo">XOXO<em>.</em></div>
+      <div class="auth-title">Create your account</div>
+      <div class="auth-sub">Start saving on bot traffic in under 10 minutes.</div>
+      <div class="social-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Continue with Google
+      </div>
+      <div class="social-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+        Continue with GitHub
+      </div>
+      <div class="auth-divider"><span>or with email</span></div>
+      <div class="field"><label>Work email</label><input type="email" placeholder="you@yoursite.com"></div>
+      <div class="field"><label>Password</label><input type="password" placeholder="8+ characters"></div>
+      <div class="field"><label>Company / publication name</label><input type="text" placeholder="TechCrunch"></div>
+      <button class="btn-full" onclick="go(1)">Create account →</button>
+      <div class="auth-footer">Already have an account? <a href="#">Sign in</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 1: PLAN PICKER -->
+<div class="screen" id="s1">
+  <div class="plan-wrap">
+    <div class="auth-logo" style="text-align:center;font-size:18px;margin-bottom:20px">XOXO<em>.</em></div>
+    <div class="plan-title">Choose your plan</div>
+    <div class="plan-sub">Start free. Upgrade anytime. Pay a fraction of what you save.</div>
+    <div class="plans-row">
+      <div class="plan-opt">
+        <div class="plan-tag">Starter</div>
+        <div class="plan-name">Free</div>
+        <div class="plan-price">$0</div>
+        <div class="plan-period">/ month · up to 5M visits</div>
+        <ul class="plan-feats">
+          <li>Bot classification</li>
+          <li>Edge cache routing</li>
+          <li>llms.txt auto-gen</li>
+          <li>7-day savings history</li>
+          <li>Email support</li>
+        </ul>
+      </div>
+      <div class="plan-opt selected">
+        <div class="plan-tag">Most popular</div>
+        <div class="plan-name">Publisher</div>
+        <div class="plan-price">$499</div>
+        <div class="plan-period">/ month · up to 50M visits</div>
+        <ul class="plan-feats">
+          <li>Everything in Free</li>
+          <li>Advanced fingerprinting</li>
+          <li>Per-bot policy controls</li>
+          <li>Full savings dashboard</li>
+          <li>Priority support</li>
+        </ul>
+      </div>
+      <div class="plan-opt">
+        <div class="plan-tag">Enterprise</div>
+        <div class="plan-name">Custom</div>
+        <div class="plan-price" style="font-size:28px;padding-top:4px">Talk to us</div>
+        <div class="plan-period">/ month · unlimited visits</div>
+        <ul class="plan-feats">
+          <li>Everything in Publisher</li>
+          <li>Dedicated edge nodes</li>
+          <li>Custom SLAs</li>
+          <li>SSO + audit logs</li>
+          <li>White-glove setup</li>
+        </ul>
+      </div>
+    </div>
+    <div class="plan-cta" style="margin-top:32px;display:flex;gap:12px">
+      <button class="btn-full" style="max-width:200px" onclick="go(2)">Start with Publisher →</button>
+      <button class="btn-full outline" style="max-width:160px" onclick="go(2)">Start free</button>
+    </div>
+    <div style="margin-top:16px;font-size:12px;color:var(--ink-30)">14-day free trial · No card required to start · Cancel anytime</div>
+  </div>
+</div>
+
+<!-- SCREEN 2: ADD DOMAIN -->
+<div class="screen" id="s2">
+  <div class="onboard-wrap">
+    <div class="onboard-sidebar">
+      <div class="ob-logo">XOXO<em>.</em></div>
+      <div class="ob-steps">
+        <div class="ob-step"><div class="ob-circle done">✓</div><div><div class="ob-step-title">Create account</div><div class="ob-step-sub">Done</div></div></div>
+        <div class="ob-step"><div class="ob-circle done">✓</div><div><div class="ob-step-title">Choose plan</div><div class="ob-step-sub">Publisher · $499/mo</div></div></div>
+        <div class="ob-step"><div class="ob-circle active">3</div><div><div class="ob-step-title">Add your domain</div><div class="ob-step-sub">Tell us where you live</div></div></div>
+        <div class="ob-step todo"><div class="ob-circle todo">4</div><div><div class="ob-step-title">Install Worker</div><div class="ob-step-sub">5 minute setup</div></div></div>
+        <div class="ob-step todo"><div class="ob-circle todo">5</div><div><div class="ob-step-title">Verify connection</div><div class="ob-step-sub">Confirm it's working</div></div></div>
+      </div>
+    </div>
+    <div class="ob-main">
+      <div class="ob-step-num">Step 3 of 5</div>
+      <div class="ob-title">Add your domain</div>
+      <div class="ob-desc">Enter the domain of the site you want to protect. This is where XOXO will intercept bot traffic and start saving you money.</div>
+      <div class="domain-row">
+        <input type="text" placeholder="techcrunch.com" value="techcrunch.com">
+        <button onclick="go(3)">Continue →</button>
+      </div>
+      <div class="alert-box green" style="max-width:440px">
+        <div>✓</div>
+        <div><strong>techcrunch.com</strong> — domain is valid and reachable. We detected Cloudflare on this domain. Recommended: use the Cloudflare Worker method.</div>
+      </div>
+      <div style="font-size:12px;color:var(--ink-30);margin-top:8px;max-width:440px;line-height:1.6">You can add more domains later. XOXO works on any domain that routes traffic through Cloudflare, Fastly, Vercel, or nginx.</div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 3: INSTALL WORKER -->
+<div class="screen" id="s3">
+  <div class="onboard-wrap">
+    <div class="onboard-sidebar">
+      <div class="ob-logo">XOXO<em>.</em></div>
+      <div class="ob-steps">
+        <div class="ob-step"><div class="ob-circle done">✓</div><div><div class="ob-step-title">Create account</div><div class="ob-step-sub">Done</div></div></div>
+        <div class="ob-step"><div class="ob-circle done">✓</div><div><div class="ob-step-title">Choose plan</div><div class="ob-step-sub">Publisher · $499/mo</div></div></div>
+        <div class="ob-step"><div class="ob-circle done">✓</div><div><div class="ob-step-title">Add your domain</div><div class="ob-step-sub">techcrunch.com</div></div></div>
+        <div class="ob-step"><div class="ob-circle active">4</div><div><div class="ob-step-title">Install Worker</div><div class="ob-step-sub">Cloudflare method</div></div></div>
+        <div class="ob-step todo"><div class="ob-circle todo">5</div><div><div class="ob-step-title">Verify connection</div><div class="ob-step-sub">Almost there</div></div></div>
+      </div>
+    </div>
+    <div class="ob-main">
+      <div class="ob-step-num">Step 4 of 5</div>
+      <div class="ob-title">Install the XOXO Worker</div>
+      <div class="ob-desc">We detected Cloudflare on techcrunch.com. Go to your Cloudflare dashboard → Workers & Pages → Create, paste the script below, and add the route <code style="background:var(--surface);padding:2px 6px;border-radius:3px;font-size:12px">techcrunch.com/*</code></div>
+      <div class="code-box">
+        <span class="copy-tag" onclick="this.textContent='Copied!'">Copy</span>
+<span class="cm">// XOXO Worker — techcrunch.com</span>
+<span class="kw">const</span> XOXO_KEY = <span class="str">"xo_live_sk_tc_a8f3c92d1e4b"</span>;
+
+<span class="kw">export default</span> {
+  <span class="kw">async</span> fetch(request, env) {
+    <span class="kw">const</span> res = <span class="kw">await</span> fetch(<span class="str">"https://edge.xoxo.ai/v1/classify"</span>, {
+      method: <span class="str">"POST"</span>,
+      headers: {
+        <span class="str">"Authorization"</span>: <span class="str">`Bearer ${XOXO_KEY}`</span>,
+        <span class="str">"X-URL"</span>: request.url,
+        <span class="str">"X-UA"</span>: request.headers.get(<span class="str">"user-agent"</span>) || <span class="str">""</span>,
+        <span class="str">"X-IP"</span>: request.headers.get(<span class="str">"cf-connecting-ip"</span>) || <span class="str">""</span>,
+      }
+    });
+    <span class="kw">const</span> { action, payload } = <span class="kw">await</span> res.json();
+    <span class="kw">if</span> (action === <span class="str">"serve_cache"</span>) <span class="kw">return new</span> Response(payload, { status: 200 });
+    <span class="kw">if</span> (action === <span class="str">"block"</span>) <span class="kw">return new</span> Response(<span class="str">"403"</span>, { status: 403 });
+    <span class="kw">return</span> fetch(request); <span class="cm">// pass through to origin</span>
+  }
+}
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="ob-btn primary" onclick="go(4)">I've deployed the Worker →</button>
+        <button class="ob-btn secondary">Need help?</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 4: VERIFY -->
+<div class="screen" id="s4">
+  <div class="onboard-wrap">
+    <div class="onboard-sidebar">
+      <div class="ob-logo">XOXO<em>.</em></div>
+      <div class="ob-steps">
+        <div class="ob-step"><div class="ob-circle done">✓</div><div><div class="ob-step-title">Create account</div></div></div>
+        <div class="ob-step"><div class="ob-circle done">✓</div><div><div class="ob-step-title">Choose plan</div></div></div>
+        <div class="ob-step"><div class="ob-circle done">✓</div><div><div class="ob-step-title">Add your domain</div></div></div>
+        <div class="ob-step"><div class="ob-circle done">✓</div><div><div class="ob-step-title">Install Worker</div></div></div>
+        <div class="ob-step"><div class="ob-circle active">5</div><div><div class="ob-step-title">Verify connection</div><div class="ob-step-sub">Running checks…</div></div></div>
+      </div>
+    </div>
+    <div class="ob-main">
+      <div class="ob-step-num">Step 5 of 5</div>
+      <div class="ob-title">Verifying your connection</div>
+      <div class="ob-desc">XOXO is sending test requests to techcrunch.com to confirm everything is working correctly.</div>
+      <div class="check-list">
+        <div class="check-item"><div class="check-icon ok">✓</div><div><div class="check-label">Worker is deployed and reachable</div></div></div>
+        <div class="check-item"><div class="check-icon ok">✓</div><div><div class="check-label">API key authenticated</div></div></div>
+        <div class="check-item"><div class="check-icon ok">✓</div><div><div class="check-label">Bot test request intercepted correctly</div></div></div>
+        <div class="check-item"><div class="check-icon ok">✓</div><div><div class="check-label">Origin server not hit during bot test</div></div></div>
+        <div class="check-item"><div class="check-icon ok">✓</div><div><div class="check-label">llms.txt generated at techcrunch.com/llms.txt</div></div></div>
+        <div class="check-item"><div class="check-icon ok">✓</div><div><div class="check-label">Live traffic flowing to dashboard</div></div></div>
+      </div>
+      <div class="alert-box green" style="max-width:480px">
+        <div>✓</div>
+        <div>All checks passed. XOXO is live on techcrunch.com. Your first bot was detected <strong>8 seconds ago</strong>.</div>
+      </div>
+      <button class="ob-btn primary" onclick="go(5)" style="margin-top:16px">See your first savings →</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 5: FIRST SAVINGS MOMENT -->
+<div class="screen" id="s5">
+  <div class="first-save">
+    <div class="confetti-num count-up">$0.12</div>
+    <div class="confetti-label">Saved in the last 60 seconds</div>
+    <h2>XOXO is working.</h2>
+    <p>In the first minute alone, we intercepted 847 bot requests that would have hit your origin server. The savings compound every hour.</p>
+    <div class="first-stats">
+      <div class="first-stat"><div class="first-stat-num">847</div><div class="first-stat-label">Bots intercepted</div></div>
+      <div class="first-stat"><div class="first-stat-num">0</div><div class="first-stat-label">Origin hits</div></div>
+      <div class="first-stat"><div class="first-stat-num">2.3<span style="font-size:18px">MB</span></div><div class="first-stat-label">Bandwidth saved</div></div>
+    </div>
+    <div style="font-size:12px;color:rgba(255,255,255,0.25);margin-bottom:32px">At this rate, XOXO will save you approximately <span style="color:var(--green);font-weight:500">$5,200 this month</span></div>
+    <button class="first-btn" onclick="go(6)">Go to dashboard →</button>
+  </div>
+</div>
+
+<!-- SCREEN 6: FULL DASHBOARD -->
+<div class="screen" id="s6">
+  <div class="dash-wrap">
+    <div class="dash-sidebar">
+      <div class="ds-logo">XOXO<em>.</em></div>
+      <div class="ds-site"><div class="ds-dot"></div><div class="ds-name">techcrunch.com</div><div style="font-size:10px;color:rgba(255,255,255,0.25)">⌄</div></div>
+      <div class="ds-sec">Main</div>
+      <div class="nav-i active" onclick="dp('overview',this)"><div class="ni">◈</div>Overview</div>
+      <div class="nav-i" onclick="dp('traffic',this)"><div class="ni">≋</div>Traffic</div>
+      <div class="nav-i" onclick="dp('savings',this)"><div class="ni">◎</div>Savings<div class="nb">$</div></div>
+      <div class="nav-i" onclick="dp('bots',this)"><div class="ni">⊕</div>Bot Intel</div>
+      <div class="ds-sec" style="margin-top:10px">Control</div>
+      <div class="nav-i" onclick="dp('policy',this)"><div class="ni">⊞</div>Policy</div>
+      <div class="nav-i" onclick="dp('settings',this)"><div class="ni">◯</div>Settings</div>
+      <div class="ds-bot">
+        <div class="user-r">
+          <div class="ua">SP</div>
+          <div><div class="un">Satvik M.</div><div class="up">Publisher plan</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-main">
+      <div class="dash-header">
+        <div class="dh-title" id="dash-title">Overview</div>
+        <div class="dr">Last 30 days ⌄</div>
+        <button class="dh-btn">Export</button>
+        <button class="dh-btn p">+ Add site</button>
+      </div>
+      <div class="dash-content">
+
+        <!-- OVERVIEW -->
+        <div class="dash-page active" id="dp-overview">
+          <div class="mets mb16">
+            <div class="met"><div class="met-acc g"></div><div class="met-lbl">SAVED THIS MONTH</div><div class="met-val">$5,280</div><div class="met-ch up-c">↑ first month — growing</div></div>
+            <div class="met"><div class="met-acc b"></div><div class="met-lbl">ORIGIN CALLS BLOCKED</div><div class="met-val">1.4<span class="u">M</span></div><div class="met-ch up-c">↑ 41% this week</div></div>
+            <div class="met"><div class="met-acc a"></div><div class="met-lbl">BOT TRAFFIC SHARE</div><div class="met-val">51<span class="u">%</span></div><div class="met-ch nt-c">Growing month on month</div></div>
+            <div class="met"><div class="met-acc r"></div><div class="met-lbl">BANDWIDTH SAVED</div><div class="met-val">940<span class="u">GB</span></div><div class="met-ch up-c">↑ This week alone</div></div>
+          </div>
+          <div class="g2 mb10">
+            <div class="card">
+              <div class="ch"><div class="ct">Daily savings (first 30 days)</div><div class="ca">Expand →</div></div>
+              <div class="cb">
+                <div class="bars" style="height:150px">
+                  <div class="bar-w"><div class="bar" style="height:8%;background:var(--green);opacity:.3"></div><div class="bar-l">1</div></div>
+                  <div class="bar-w"><div class="bar" style="height:14%;background:var(--green);opacity:.35"></div><div class="bar-l">3</div></div>
+                  <div class="bar-w"><div class="bar" style="height:22%;background:var(--green);opacity:.4"></div><div class="bar-l">5</div></div>
+                  <div class="bar-w"><div class="bar" style="height:30%;background:var(--green);opacity:.45"></div><div class="bar-l">7</div></div>
+                  <div class="bar-w"><div class="bar" style="height:38%;background:var(--green);opacity:.5"></div><div class="bar-l">9</div></div>
+                  <div class="bar-w"><div class="bar" style="height:45%;background:var(--green);opacity:.55"></div><div class="bar-l">11</div></div>
+                  <div class="bar-w"><div class="bar" style="height:52%;background:var(--green);opacity:.6"></div><div class="bar-l">13</div></div>
+                  <div class="bar-w"><div class="bar" style="height:60%;background:var(--green);opacity:.65"></div><div class="bar-l">15</div></div>
+                  <div class="bar-w"><div class="bar" style="height:68%;background:var(--green);opacity:.7"></div><div class="bar-l">17</div></div>
+                  <div class="bar-w"><div class="bar" style="height:75%;background:var(--green);opacity:.75"></div><div class="bar-l">19</div></div>
+                  <div class="bar-w"><div class="bar" style="height:82%;background:var(--green);opacity:.82"></div><div class="bar-l">21</div></div>
+                  <div class="bar-w"><div class="bar" style="height:88%;background:var(--green);opacity:.88"></div><div class="bar-l">23</div></div>
+                  <div class="bar-w"><div class="bar" style="height:93%;background:var(--green);opacity:.93"></div><div class="bar-l">25</div></div>
+                  <div class="bar-w"><div class="bar" style="height:96%;background:var(--green);opacity:.96"></div><div class="bar-l">27</div></div>
+                  <div class="bar-w"><div class="bar" style="height:100%;background:var(--green)"></div><div class="bar-l">29</div></div>
+                </div>
+                <div style="font-size:11px;color:var(--ink-30);margin-top:8px">Savings grow as XOXO's cache warms up — more URLs cached = more savings per day</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="ch"><div class="ct">Traffic split</div></div>
+              <div class="cb">
+                <div style="display:flex;align-items:center;gap:20px">
+                  <svg width="110" height="110" viewBox="0 0 110 110">
+                    <circle cx="55" cy="55" r="44" fill="none" stroke="#f4f4f0" stroke-width="16"/>
+                    <circle cx="55" cy="55" r="44" fill="none" stroke="var(--green)" stroke-width="16" stroke-dasharray="140 137" stroke-dashoffset="0" transform="rotate(-90 55 55)" stroke-linecap="round"/>
+                    <circle cx="55" cy="55" r="44" fill="none" stroke="var(--red)" stroke-width="16" stroke-dasharray="62 215" stroke-dashoffset="-140" transform="rotate(-90 55 55)"/>
+                    <circle cx="55" cy="55" r="44" fill="none" stroke="var(--blue)" stroke-width="16" stroke-dasharray="49 228" stroke-dashoffset="-202" transform="rotate(-90 55 55)"/>
+                    <text x="55" y="51" text-anchor="middle" font-size="15" font-weight="600" fill="var(--ink)" font-family="Geist Mono">51%</text>
+                    <text x="55" y="65" text-anchor="middle" font-size="8" fill="#888" font-family="Geist Mono">bots</text>
+                  </svg>
+                  <div style="display:flex;flex-direction:column;gap:9px">
+                    <div style="display:flex;align-items:center;gap:7px"><div style="width:8px;height:8px;border-radius:50%;background:var(--green)"></div><div style="font-size:12px;color:var(--ink-60);flex:1">Training bots</div><div style="font-size:12px;font-weight:500">28%</div></div>
+                    <div style="display:flex;align-items:center;gap:7px"><div style="width:8px;height:8px;border-radius:50%;background:var(--red)"></div><div style="font-size:12px;color:var(--ink-60);flex:1">Retrieval agents</div><div style="font-size:12px;font-weight:500">15%</div></div>
+                    <div style="display:flex;align-items:center;gap:7px"><div style="width:8px;height:8px;border-radius:50%;background:var(--blue)"></div><div style="font-size:12px;color:var(--ink-60);flex:1">Search crawlers</div><div style="font-size:12px;font-weight:500">8%</div></div>
+                    <div style="display:flex;align-items:center;gap:7px"><div style="width:8px;height:8px;border-radius:50%;background:var(--ink-12)"></div><div style="font-size:12px;color:var(--ink-60);flex:1">Humans</div><div style="font-size:12px;font-weight:500">49%</div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card mb10">
+            <div class="ch"><div class="ct">Top bots intercepted today</div><div class="ca">View all →</div></div>
+            <table>
+              <thead><tr><th>Bot</th><th>Owner</th><th>Type</th><th>Requests today</th><th>Saved</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td><strong>GPTBot</strong></td><td style="color:var(--ink-60)">OpenAI</td><td><span class="bdg a">Training</span></td><td>47,820</td><td style="color:var(--green);font-weight:500">$32</td><td><span class="bdg g">Cached</span></td></tr>
+                <tr><td><strong>ClaudeBot</strong></td><td style="color:var(--ink-60)">Anthropic</td><td><span class="bdg a">Training</span></td><td>24,401</td><td style="color:var(--green);font-weight:500">$17</td><td><span class="bdg g">Cached</span></td></tr>
+                <tr><td><strong>PerplexityBot</strong></td><td style="color:var(--ink-60)">Perplexity</td><td><span class="bdg b">Retrieval</span></td><td>18,200</td><td style="color:var(--green);font-weight:500">$12</td><td><span class="bdg g">Cached</span></td></tr>
+                <tr><td><strong>CCBot</strong></td><td style="color:var(--ink-60)">Common Crawl</td><td><span class="bdg a">Training</span></td><td>12,100</td><td style="color:var(--green);font-weight:500">$8</td><td><span class="bdg r">Blocked</span></td></tr>
+                <tr><td><strong>Googlebot</strong></td><td style="color:var(--ink-60)">Google</td><td><span class="bdg b">Search</span></td><td>9,800</td><td style="color:var(--ink-30)">—</td><td><span class="bdg gr">Allowed</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SAVINGS -->
+        <div class="dash-page" id="dp-savings">
+          <div class="sav-hero mb10">
+            <div><div class="sav-big">$5,280</div><div class="sav-big-l">Saved this month</div></div>
+            <div class="sav-bdown">
+              <div class="sbd"><div class="sbd-n">$63,360</div><div class="sbd-l">projected annual</div></div>
+              <div class="sbd"><div class="sbd-n">10.6×</div><div class="sbd-l">ROI vs plan cost</div></div>
+              <div class="sbd"><div class="sbd-n">↑ daily</div><div class="sbd-l">cache warming</div></div>
+            </div>
+          </div>
+          <div class="mets mb16">
+            <div class="met"><div class="met-acc g"></div><div class="met-lbl">COMPUTE SAVED</div><div class="met-val">$3,180</div><div class="met-ch up-c">Origin calls blocked</div></div>
+            <div class="met"><div class="met-acc b"></div><div class="met-lbl">BANDWIDTH SAVED</div><div class="met-val">$1,400</div><div class="met-ch up-c">940GB not transferred</div></div>
+            <div class="met"><div class="met-acc a"></div><div class="met-lbl">CDN COST SAVED</div><div class="met-val">$700</div><div class="met-ch up-c">Edge cache hits</div></div>
+            <div class="met"><div class="met-acc r"></div><div class="met-lbl">PLAN COST</div><div class="met-val">$499</div><div class="met-ch nt-c">Publisher plan</div></div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">Savings breakdown by source</div></div>
+            <div class="cb">
+              <div class="bot-r">
+                <div style="flex:1"><div class="bot-n">Origin compute blocked</div><div class="bot-s">1.4M server calls avoided this month</div><div class="pb-bar"><div class="pb-fill" style="width:60%;background:var(--green)"></div></div></div>
+                <div style="font-size:14px;font-weight:500;color:var(--green)">$3,180</div>
+              </div>
+              <div class="bot-r">
+                <div style="flex:1"><div class="bot-n">Bandwidth not transferred</div><div class="bot-s">940GB intercepted at XOXO edge</div><div class="pb-bar"><div class="pb-fill" style="width:26%;background:var(--blue)"></div></div></div>
+                <div style="font-size:14px;font-weight:500;color:var(--blue)">$1,400</div>
+              </div>
+              <div class="bot-r">
+                <div style="flex:1"><div class="bot-n">CDN efficiency</div><div class="bot-s">Edge cache hits replacing origin fetches</div><div class="pb-bar"><div class="pb-fill" style="width:14%;background:var(--amber)"></div></div></div>
+                <div style="font-size:14px;font-weight:500;color:var(--amber)">$700</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TRAFFIC -->
+        <div class="dash-page" id="dp-traffic">
+          <div class="mets mb16">
+            <div class="met"><div class="met-acc b"></div><div class="met-lbl">TOTAL REQUESTS</div><div class="met-val">12.8<span class="u">M</span></div><div class="met-ch up-c">↑ 14% this month</div></div>
+            <div class="met"><div class="met-acc g"></div><div class="met-lbl">BOT REQUESTS</div><div class="met-val">6.5<span class="u">M</span></div><div class="met-ch up-c">↑ 31% this month</div></div>
+            <div class="met"><div class="met-acc a"></div><div class="met-lbl">HUMAN REQUESTS</div><div class="met-val">6.3<span class="u">M</span></div><div class="met-ch dn-c">↓ 3% this month</div></div>
+            <div class="met"><div class="met-acc r"></div><div class="met-lbl">BYPASSING ROBOTS.TXT</div><div class="met-val">13<span class="u">%</span></div><div class="met-ch dn-c">Rising — watch this</div></div>
+          </div>
+          <div class="card mb10">
+            <div class="ch"><div class="ct">Bot vs human traffic trend</div></div>
+            <div class="cb">
+              <div class="bars" style="height:160px">
+                <div class="bar-w"><div style="display:flex;flex-direction:column;width:100%;height:100%;justify-content:flex-end"><div class="bar" style="height:40%;background:var(--green);opacity:.6;border-radius:2px 2px 0 0"></div><div style="height:60%;background:var(--blue);opacity:.2;border-radius:0"></div></div><div class="bar-l">W1</div></div>
+                <div class="bar-w"><div style="display:flex;flex-direction:column;width:100%;height:100%;justify-content:flex-end"><div class="bar" style="height:44%;background:var(--green);opacity:.65;border-radius:2px 2px 0 0"></div><div style="height:56%;background:var(--blue);opacity:.2;border-radius:0"></div></div><div class="bar-l">W2</div></div>
+                <div class="bar-w"><div style="display:flex;flex-direction:column;width:100%;height:100%;justify-content:flex-end"><div class="bar" style="height:48%;background:var(--green);opacity:.7;border-radius:2px 2px 0 0"></div><div style="height:52%;background:var(--blue);opacity:.2;border-radius:0"></div></div><div class="bar-l">W3</div></div>
+                <div class="bar-w"><div style="display:flex;flex-direction:column;width:100%;height:100%;justify-content:flex-end"><div class="bar" style="height:51%;background:var(--green);border-radius:2px 2px 0 0"></div><div style="height:49%;background:var(--blue);opacity:.2;border-radius:0"></div></div><div class="bar-l">W4</div></div>
+              </div>
+              <div style="display:flex;gap:16px;margin-top:8px">
+                <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-60)"><div style="width:10px;height:10px;border-radius:2px;background:var(--green)"></div>Bot traffic</div>
+                <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-60)"><div style="width:10px;height:10px;border-radius:2px;background:var(--blue);opacity:.4"></div>Human traffic</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOT INTEL -->
+        <div class="dash-page" id="dp-bots">
+          <div class="mets mb16">
+            <div class="met"><div class="met-acc g"></div><div class="met-lbl">BOTS IDENTIFIED</div><div class="met-val">23</div><div class="met-ch up-c">↑ 3 new this week</div></div>
+            <div class="met"><div class="met-acc r"></div><div class="met-lbl">DISGUISED BOTS</div><div class="met-val">13<span class="u">%</span></div><div class="met-ch dn-c">Mimicking Chrome</div></div>
+            <div class="met"><div class="met-acc b"></div><div class="met-lbl">COMPLIANT BOTS</div><div class="met-val">20</div><div class="met-ch nt-c">Honouring rules</div></div>
+            <div class="met"><div class="met-acc a"></div><div class="met-lbl">DETECTION ACCURACY</div><div class="met-val">99.2<span class="u">%</span></div><div class="met-ch up-c">↑ 0.3% this month</div></div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">All identified bots</div><div class="ca">Export →</div></div>
+            <table>
+              <thead><tr><th>Bot</th><th>Owner</th><th>Category</th><th>Req/day</th><th>Robots.txt</th><th>Action</th></tr></thead>
+              <tbody>
+                <tr><td><strong>GPTBot</strong></td><td style="color:var(--ink-60)">OpenAI</td><td><span class="bdg a">Training</span></td><td>47,820</td><td><span class="bdg g">Compliant</span></td><td><span class="bdg g">Cached</span></td></tr>
+                <tr><td><strong>ClaudeBot</strong></td><td style="color:var(--ink-60)">Anthropic</td><td><span class="bdg a">Training</span></td><td>24,401</td><td><span class="bdg g">Compliant</span></td><td><span class="bdg g">Cached</span></td></tr>
+                <tr><td><strong>PerplexityBot</strong></td><td style="color:var(--ink-60)">Perplexity</td><td><span class="bdg b">Retrieval</span></td><td>18,200</td><td><span class="bdg g">Compliant</span></td><td><span class="bdg g">Cached</span></td></tr>
+                <tr><td><strong>CCBot</strong></td><td style="color:var(--ink-60)">Common Crawl</td><td><span class="bdg a">Training</span></td><td>12,100</td><td><span class="bdg r">Bypassing</span></td><td><span class="bdg r">Blocked</span></td></tr>
+                <tr><td><strong>Chrome/120 ⚠</strong></td><td style="color:var(--ink-60)">Unknown</td><td><span class="bdg r">Disguised</span></td><td>8,400</td><td><span class="bdg r">Bypassing</span></td><td><span class="bdg r">Blocked</span></td></tr>
+                <tr><td><strong>Googlebot</strong></td><td style="color:var(--ink-60)">Google</td><td><span class="bdg b">Search</span></td><td>9,800</td><td><span class="bdg g">Compliant</span></td><td><span class="bdg gr">Allowed</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- POLICY -->
+        <div class="dash-page" id="dp-policy">
+          <div style="background:var(--green-lt);border:1px solid var(--green-bd);border-radius:4px;padding:10px 14px;font-size:12px;color:var(--green-dk);margin-bottom:16px;display:flex;gap:8px">
+            <div>✓</div><div>Changes take effect at the edge within <strong>30 seconds</strong>. No deploys needed.</div>
+          </div>
+          <div class="g2 mb10">
+            <div class="card">
+              <div class="ch"><div class="ct">Global toggles</div></div>
+              <div class="set-row"><div><div class="set-l">Bot interception</div><div class="set-d">Intercept all non-human traffic</div></div><label class="tog"><input type="checkbox" checked><div class="tog-t"></div></label></div>
+              <div class="set-row"><div><div class="set-l">Edge caching for bots</div><div class="set-d">Serve cached instead of origin</div></div><label class="tog"><input type="checkbox" checked><div class="tog-t"></div></label></div>
+              <div class="set-row"><div><div class="set-l">llms.txt serving</div><div class="set-d">Auto-serve structured site guide</div></div><label class="tog"><input type="checkbox" checked><div class="tog-t"></div></label></div>
+              <div class="set-row"><div><div class="set-l">Disguised bot detection</div><div class="set-d">Block bots mimicking browsers</div></div><label class="tog"><input type="checkbox" checked><div class="tog-t"></div></label></div>
+            </div>
+            <div class="card">
+              <div class="ch"><div class="ct">Default rules by category</div></div>
+              <div class="set-row"><div><div class="set-l">Training scrapers</div><div class="set-d">GPTBot, CCBot, ClaudeBot</div></div><div style="display:flex;gap:5px"><button class="pb pl">Cache</button><button class="pb">Block</button><button class="pb">Allow</button></div></div>
+              <div class="set-row"><div><div class="set-l">Retrieval agents</div><div class="set-d">PerplexityBot, OAI-SearchBot</div></div><div style="display:flex;gap:5px"><button class="pb pa">Cache</button><button class="pb">Block</button><button class="pb">Allow</button></div></div>
+              <div class="set-row"><div><div class="set-l">Search crawlers</div><div class="set-d">Googlebot, Bingbot</div></div><div style="display:flex;gap:5px"><button class="pb">Cache</button><button class="pb">Block</button><button class="pb pa">Allow</button></div></div>
+              <div class="set-row"><div><div class="set-l">Unknown / disguised</div><div class="set-d">Unverified behaviour</div></div><div style="display:flex;gap:5px"><button class="pb">Cache</button><button class="pb pr">Block</button><button class="pb">Allow</button></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">Per-bot overrides</div><div class="ca">+ Add override</div></div>
+            <div class="pol-row"><div style="display:flex;align-items:center;gap:10px;flex:1"><div style="width:28px;height:28px;border-radius:5px;background:var(--amber-lt);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">🤖</div><div><div class="pol-name">GPTBot</div><div class="pol-sub">OpenAI · Training</div></div></div><span class="bdg g">47k req/day</span><div class="pol-btns"><button class="pb pa">Cache</button><button class="pb">Block</button><button class="pb">Rate limit</button></div></div>
+            <div class="pol-row"><div style="display:flex;align-items:center;gap:10px;flex:1"><div style="width:28px;height:28px;border-radius:5px;background:var(--red-lt);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">🤖</div><div><div class="pol-name">CCBot</div><div class="pol-sub">Common Crawl · Bypasses robots.txt</div></div></div><span class="bdg r">12k req/day</span><div class="pol-btns"><button class="pb">Cache</button><button class="pb pr">Block</button><button class="pb">Rate limit</button></div></div>
+            <div class="pol-row"><div style="display:flex;align-items:center;gap:10px;flex:1"><div style="width:28px;height:28px;border-radius:5px;background:var(--blue-lt);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">🔍</div><div><div class="pol-name">Googlebot</div><div class="pol-sub">Google · Search crawler</div></div></div><span class="bdg gr">9.8k req/day</span><div class="pol-btns"><button class="pb">Cache</button><button class="pb">Block</button><button class="pb pa">Allow</button></div></div>
+          </div>
+        </div>
+
+        <!-- SETTINGS -->
+        <div class="dash-page" id="dp-settings">
+          <div class="g2 mb10">
+            <div class="card">
+              <div class="ch"><div class="ct">Site configuration</div></div>
+              <div class="set-row"><div><div class="set-l">Domain</div><div class="set-d">Your active domain</div></div><input class="set-inp" value="techcrunch.com" readonly></div>
+              <div class="set-row"><div><div class="set-l">Cache TTL</div><div class="set-d">How long bot responses are cached</div></div><input class="set-inp" value="3600 seconds"></div>
+              <div class="set-row"><div><div class="set-l">llms.txt path</div><div class="set-d">Auto-generated file location</div></div><input class="set-inp" value="/llms.txt" readonly></div>
+              <div class="set-row"><div><div class="set-l">DNS proxy active</div><div class="set-d">Cloudflare orange cloud on</div></div><label class="tog"><input type="checkbox" checked><div class="tog-t"></div></label></div>
+            </div>
+            <div class="card">
+              <div class="ch"><div class="ct">Plan &amp; billing</div></div>
+              <div class="set-row"><div><div class="set-l">Current plan</div><div class="set-d">Up to 50M monthly visits</div></div><span class="bdg g">Publisher · $499/mo</span></div>
+              <div class="set-row"><div><div class="set-l">Visits this month</div><div class="set-d">12.8M of 50M used</div></div><div style="min-width:160px"><div class="pb-bar" style="height:5px"><div class="pb-fill" style="width:26%;background:var(--green)"></div></div><div style="font-size:10px;color:var(--ink-30);margin-top:4px">26% of limit</div></div></div>
+              <div class="set-row"><div><div class="set-l">Next billing</div></div><span style="font-size:12px;color:var(--ink-60)">Nov 1, 2026</span></div>
+              <div class="set-row"><div><div class="set-l">Upgrade</div><div class="set-d">Unlock unlimited visits</div></div><button class="dh-btn p" style="font-size:11px">Enterprise →</button></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ch"><div class="ct">Integrations</div></div>
+            <div class="set-row"><div><div class="set-l">Cloudflare</div><div class="set-d">Worker deployed · Active</div></div><span class="bdg g">Connected</span></div>
+            <div class="set-row"><div><div class="set-l">Google Analytics</div><div class="set-d">Human + bot unified view</div></div><span class="bdg g">Connected</span></div>
+            <div class="set-row"><div><div class="set-l">Slack</div><div class="set-d">Get savings alerts in workspace</div></div><button class="dh-btn">Connect</button></div>
+            <div class="set-row"><div><div class="set-l">API key</div><div class="set-d">For programmatic access</div></div><input class="set-inp" value="xo_live_sk_tc_a8f3c92d1e4b••••" style="min-width:260px;font-size:11px"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let cur = 5;
+  const total = 7;
+
+  function go(n) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.jb-step').forEach((s, i) => {
+      s.classList.remove('active', 'done');
+      if (i < n) s.classList.add('done');
+      else if (i === n) s.classList.add('active');
+    });
+    document.getElementById('s' + n).classList.add('active');
+    cur = n;
+  }
+
+  function next() { if (cur < total - 1) go(cur + 1); }
+
+  function dp(id, el) {
+    document.querySelectorAll('.dash-page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-i').forEach(n => n.classList.remove('active'));
+    document.getElementById('dp-' + id).classList.add('active');
+    el.classList.add('active');
+    const titles = { overview: 'Overview', traffic: 'Traffic', savings: 'Savings', bots: 'Bot Intelligence', policy: 'Policy', settings: 'Settings' };
+    document.getElementById('dash-title').textContent = titles[id] || id;
+  }
+
+  document.querySelectorAll('.pb').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const row = this.closest('.set-row, .pol-row');
+      const btns = row ? row.querySelectorAll('.pb') : this.parentElement.querySelectorAll('.pb');
+      btns.forEach(b => b.className = 'pb');
+      const t = this.textContent.trim().toLowerCase();
+      if (t === 'cache' || t === 'allow') this.classList.add('pa');
+      else if (t === 'block') this.classList.add('pr');
+      else if (t === 'rate limit') this.classList.add('pl');
+    });
+  });
+</script>
+</body>
+</html>
