@@ -3,62 +3,56 @@ import { NextResponse } from "next/server";
 /**
  * Subdomain routing middleware.
  *
- * Production (Vercel):
- *   app.xoxo.ai  → internally rewrites to /app/* pages
- *   xoxo.ai      → marketing pages (no rewrite)
+ * Modes:
+ *  1. Custom domains configured (NEXT_PUBLIC_APP_DOMAIN set):
+ *     app.xoxo.ai  → rewrites internally to /app/*
+ *     xoxo.ai/app  → redirects to app.xoxo.ai
  *
- * Local dev — set NEXT_PUBLIC_SUBDOMAIN=app in your env or
- * visit http://localhost:3000 normally (dashboard at /app/*).
- *
- * Vercel config required:
- *   Add both xoxo.ai and app.xoxo.ai as custom domains on the same
- *   Vercel project — middleware handles the split at runtime.
+ *  2. Single domain / Vercel preview URL (no custom domain yet):
+ *     All traffic served on one host.
+ *     /app/* routes work directly — no subdomain redirect.
+ *     This is the default until you add custom domains.
  */
 
-const APP_DOMAIN  = process.env.NEXT_PUBLIC_APP_DOMAIN  ?? "app.xoxo.ai";
-const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "xoxo.ai";
+const APP_DOMAIN  = process.env.NEXT_PUBLIC_APP_DOMAIN;   // e.g. "app.xoxo.ai"
+const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN;  // e.g. "xoxo.ai"
 
 export function middleware(request) {
-  const { pathname, search } = request.nextUrl;
+  const { pathname } = request.nextUrl;
   const hostname = request.headers.get("host") ?? "";
 
-  // ── Determine which subdomain we're on ──────────────────────────────────
-  const isAppSubdomain =
-    hostname === APP_DOMAIN ||
-    hostname.startsWith("app.") ||
-    // Local override: ?_host=app simulates app.xoxo.ai in dev
-    request.nextUrl.searchParams.get("_host") === "app";
+  // ── Custom subdomain mode (only when both env vars are set) ───────────────
+  const customDomainsConfigured = APP_DOMAIN && ROOT_DOMAIN;
 
-  // ── app.xoxo.ai ─────────────────────────────────────────────────────────
-  if (isAppSubdomain) {
-    // Already an /app/* path — don't double-prefix
-    if (pathname.startsWith("/app")) {
-      return NextResponse.next();
+  if (customDomainsConfigured) {
+    const isAppSubdomain =
+      hostname === APP_DOMAIN ||
+      request.nextUrl.searchParams.get("_host") === "app";
+
+    // On app.xoxo.ai — rewrite to /app/* internally
+    if (isAppSubdomain) {
+      if (pathname.startsWith("/app")) return NextResponse.next();
+      const url = request.nextUrl.clone();
+      url.searchParams.delete("_host");
+      url.pathname = pathname === "/" ? "/app" : `/app${pathname}`;
+      return NextResponse.rewrite(url);
     }
 
-    // Strip _host param before rewriting
-    const url = request.nextUrl.clone();
-    url.searchParams.delete("_host");
-
-    // / → /app, /traffic → /app/traffic, etc.
-    url.pathname = pathname === "/" ? "/app" : `/app${pathname}`;
-    return NextResponse.rewrite(url);
+    // On xoxo.ai — redirect /app/* to app.xoxo.ai
+    if (pathname.startsWith("/app")) {
+      const url = request.nextUrl.clone();
+      url.host = APP_DOMAIN;
+      url.pathname = pathname.replace(/^\/app/, "") || "/";
+      return NextResponse.redirect(url);
+    }
   }
 
-  // ── xoxo.ai — marketing site ─────────────────────────────────────────────
-  // If someone somehow hits /app/* on the marketing domain, redirect to app
-  if (pathname.startsWith("/app")) {
-    const url = request.nextUrl.clone();
-    url.host = `app.${hostname.replace(/^www\./, "")}`;
-    url.pathname = pathname.replace(/^\/app/, "") || "/";
-    return NextResponse.redirect(url);
-  }
-
+  // ── Single-domain / preview mode — just pass everything through ───────────
+  // /app/* works directly via path — no subdomain needed
   return NextResponse.next();
 }
 
 export const config = {
-  // Run on all paths except Next internals and static assets
   matcher: [
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
